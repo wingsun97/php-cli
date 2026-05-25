@@ -1,5 +1,5 @@
 # =========================
-# Core: ghcr.io/wingsun97/php-cli:8.3-cli-core
+# Core: ghcr.io/wingsun97/php-cli:8.3-core
 # =========================
 FROM php:8.3-cli-bookworm
 

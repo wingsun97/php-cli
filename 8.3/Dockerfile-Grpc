@@ -1,11 +1,11 @@
 # =========================
-# Grpc: ghcr.io/wingsun97/php-cli:8.3-cli-grpc
+# Grpc: ghcr.io/wingsun97/php-cli:8.3-grpc
 # =========================
 
 # =========================
 # Stage 1: build grpc
 # =========================
-FROM ghcr.io/wingsun97/php-cli:8.3-cli-core AS builder
+FROM ghcr.io/wingsun97/php-cli:8.3-core AS builder
 
 # 基础镜像已包含 gcc/g++/make/autoconf/pkg-config/phpize
 # grpc PECL 内置 boringssl/upb/abseil，仅需 zlib1g-dev（提供 zconf.h）
@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # =========================
 # Stage 2: runtime
 # =========================
-FROM ghcr.io/wingsun97/php-cli:8.3-cli-core
+FROM ghcr.io/wingsun97/php-cli:8.3-core
 
 # grpc.so 仅链接 pthread/dl/rt/stdc++，基础镜像均已包含
 COPY --from=builder /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/

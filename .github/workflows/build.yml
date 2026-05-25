@@ -9,8 +9,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  CORE_TAG: ${{ github.repository }}:8.3-cli-core
-  GRPC_TAG: ${{ github.repository }}:8.3-cli-grpc
+  CORE_TAG: ${{ github.repository }}:8.3-core
+  GRPC_TAG: ${{ github.repository }}:8.3-grpc
 
 jobs:
   core:
@@ -29,13 +29,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate Core tags
+        id: core-tags
+        run: |
+          echo "tags<<EOF" >> $GITHUB_OUTPUT
+          echo "${{ env.REGISTRY }}/${{ env.CORE_TAG }}" >> $GITHUB_OUTPUT
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "${{ env.REGISTRY }}/${{ env.CORE_TAG }}-${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Build and push Core
         uses: docker/build-push-action@v6
         with:
           context: .
           file: 8.3/Dockerfile-Core
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.REGISTRY }}/${{ env.CORE_TAG }}
+          tags: ${{ steps.core-tags.outputs.tags }}
 
   grpc:
     needs: [core]
@@ -67,10 +77,20 @@ jobs:
             exit 1
           }
 
+      - name: Generate Grpc tags
+        id: grpc-tags
+        run: |
+          echo "tags<<EOF" >> $GITHUB_OUTPUT
+          echo "${{ env.REGISTRY }}/${{ env.GRPC_TAG }}" >> $GITHUB_OUTPUT
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "${{ env.REGISTRY }}/${{ env.GRPC_TAG }}-${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Build and push Grpc
         uses: docker/build-push-action@v6
         with:
           context: .
           file: 8.3/Dockerfile-Grpc
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.REGISTRY }}/${{ env.GRPC_TAG }}
+          tags: ${{ steps.grpc-tags.outputs.tags }}
