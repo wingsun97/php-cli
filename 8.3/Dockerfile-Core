@@ -1,0 +1,41 @@
+# =========================
+# Core: ghcr.io/wingsun97/php-cli:8.3-cli-core
+# =========================
+FROM php:8.3-cli-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libicu-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+ \
+    libzip4 \
+    libpng16-16 \
+    libjpeg62-turbo \
+    libfreetype6 \
+ \
+ && docker-php-ext-configure gd --with-freetype --with-jpeg \
+ && docker-php-ext-install \
+    bcmath \
+    intl \
+    pdo \
+    pdo_mysql \
+    mysqli \
+    zip \
+    gd \
+    opcache \
+    pcntl \
+ \
+ && apt-get purge -y --auto-remove \
+    libicu-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+ \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace

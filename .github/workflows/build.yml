@@ -1,0 +1,76 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  CORE_TAG: ${{ github.repository }}:8.3-cli-core
+  GRPC_TAG: ${{ github.repository }}:8.3-cli-grpc
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Core
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: 8.3/Dockerfile-Core
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.REGISTRY }}/${{ env.CORE_TAG }}
+
+  grpc:
+    needs: [core]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for Core image to be available
+        run: |
+          for i in $(seq 30); do
+            docker manifest inspect ${{ env.REGISTRY }}/${{ env.CORE_TAG }} >/dev/null 2>&1 \
+              && echo "Core image found" && break
+            echo "Attempt $i: not ready yet, waiting 3s..."
+            sleep 3
+          done
+          docker manifest inspect ${{ env.REGISTRY }}/${{ env.CORE_TAG }} >/dev/null 2>&1 || {
+            echo "Core image not found after 90s"
+            exit 1
+          }
+
+      - name: Build and push Grpc
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: 8.3/Dockerfile-Grpc
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.REGISTRY }}/${{ env.GRPC_TAG }}
